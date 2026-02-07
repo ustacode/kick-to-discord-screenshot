@@ -4,8 +4,7 @@ dotenv.config();
 import { getStreamInfo } from './kick/stream';
 import { KickChatListener } from './kick/chat';
 import { captureScreenshot } from './screenshot';
-import { sendScreenshot, sendClip } from './discord';
-import { RollingBuffer } from './clip';
+import { sendScreenshot } from './discord';
 
 const KICK_CHANNEL = process.env.KICK_CHANNEL!;
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL!;
@@ -37,11 +36,6 @@ async function main() {
 
   const m3u8Url = streamInfo.playbackUrl;
 
-  // Start rolling buffer for clips
-  const buffer = new RollingBuffer();
-  console.log('\nStarting rolling buffer for !clip...');
-  await buffer.start(m3u8Url);
-
   // Connect to chat
   const chat = new KickChatListener(streamInfo.chatroomId);
   await chat.connect();
@@ -60,27 +54,12 @@ async function main() {
     }
   });
 
-  chat.on('clip', async ({ sender }: { sender: string }) => {
-    console.log(`[Bot] Capturing 30s clip (requested by ${sender})...`);
-
-    try {
-      const clip = await buffer.captureClip(30);
-      console.log(`[Bot] Clip captured (${(clip.length / 1024 / 1024).toFixed(1)} MB)`);
-
-      await sendClip(DISCORD_WEBHOOK_URL!, clip, KICK_CHANNEL!, sender);
-      console.log('[Bot] Clip sent to Discord!');
-    } catch (error) {
-      console.error('[Bot] Clip failed:', error instanceof Error ? error.message : error);
-    }
-  });
-
-  console.log('\nBot is running. Listening for !pic and !clip in chat...\n');
+  console.log('\nBot is running. Listening for !pic in chat...\n');
 
   // Graceful shutdown
   const shutdown = () => {
     console.log('\nShutting down...');
     chat.disconnect();
-    buffer.stop();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);

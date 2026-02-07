@@ -99,14 +99,9 @@ export class KickChatListener extends EventEmitter {
         const content: string = data.content || '';
         const sender = data.sender?.username || 'unknown';
 
-        const cmd = content.trim().toLowerCase();
-
-        if (cmd === '!pic') {
+        if (content.trim().toLowerCase() === '!pic') {
           console.log(`[Chat] !pic command from ${sender}`);
           this.emit('pic', { sender, content });
-        } else if (cmd === '!clip') {
-          console.log(`[Chat] !clip command from ${sender}`);
-          this.emit('clip', { sender, content });
         }
       } catch {
         // ignore malformed chat messages
